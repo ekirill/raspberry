@@ -12,15 +12,21 @@ logger = logging.getLogger("warm")
 
 # they say it works more precisely for servo
 factory = PiGPIOFactory()
+SERVO_PIN = 21
 
+# 90 degree limited pulse min and max
 MICROSERVO_9G = (0.000544, 0.0024 * 0.43)
 FS5106S = (0.000620 * 1.05, 0.002600 * 0.55)
 
+# thermal sensors paths
+T1 = "/sys/bus/w1/devices/28-3c01d607a218/w1_slave"
+T2 = "/sys/bus/w1/devices/28-3c01d075e72f/w1_slave"
+T3 = "/sys/bus/w1/devices/28-3c01d075bb08/w1_slave"
+T4 = "/sys/bus/w1/devices/28-3c01d075fdd4/w1_slave"
 
 class PowerSelector:
-    _min_pulse = FS5106S[0]
-    _max_pulse = FS5106S[1]
-    
+    pulse = FS5106S
+
     _min_level = 1
     _max_level = 9
     
@@ -33,7 +39,7 @@ class PowerSelector:
     def __init__(self, pin):
         self._servo = Servo(
             pin, self._pos,
-            self._min_pulse, self._max_pulse, 20/1000,
+            self.pulse[0], self.pulse[1], 20/1000,
             pin_factory=factory
         )
         self.set_level(self._level)
@@ -76,7 +82,7 @@ class PowerSelector:
 
 def main():
     logger.info("Start")
-    power = PowerSelector(21)
+    power = PowerSelector(SERVO_PIN)
     try:
         while True:
             for level in range(1, 10):
