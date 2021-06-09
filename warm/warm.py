@@ -13,10 +13,13 @@ logger = logging.getLogger("warm")
 # they say it works more precisely for servo
 factory = PiGPIOFactory()
 
+MICROSERVO_9G = (0.000544, 0.0024 * 0.43)
+FS5106S = (0.000620 * 1.05, 0.002600 * 0.55)
+
 
 class PowerSelector:
-    _min_pulse = 0.000544
-    _max_pulse = 0.0024 * 0.43
+    _min_pulse = FS5106S[0]
+    _max_pulse = FS5106S[1]
     
     _min_level = 1
     _max_level = 9
@@ -25,7 +28,7 @@ class PowerSelector:
     _max_pos = 1.0
     _delta = (_max_pos - _min_pos) / (_max_level - _min_level)
     
-    _level = _min_level
+    _level = (_max_level - _min_level + 1) // 2
     
     def __init__(self, pin):
         self._servo = Servo(
@@ -65,7 +68,7 @@ class PowerSelector:
         pos = self._pos
         logger.debug(f"Servo pos is set to {pos}")
         self._servo.value = self._pos
-        sleep(1)
+        sleep(3)
         self._servo.detach()
     
     def detach(self):
@@ -76,12 +79,10 @@ def main():
     power = PowerSelector(21)
     try:
         while True:
-            for level in range(2, 10):
+            for level in range(1, 10):
                 power.set_level(level)
-                sleep(2)
             for level in range(8, 0, -1):
                 power.set_level(level)
-                sleep(2)
     finally:
         power.detach()
 
