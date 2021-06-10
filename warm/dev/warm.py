@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import logging
+import pigpio
 from gpiozero import Servo
 from gpiozero.pins.pigpio import PiGPIOFactory
 from time import sleep
+
     
 logging.basicConfig(
     format='%(asctime)s %(message)s', level=logging.DEBUG
@@ -13,10 +15,11 @@ logger = logging.getLogger("warm")
 # they say it works more precisely for servo
 factory = PiGPIOFactory()
 SERVO_PIN = 21
+PUMP_PIN = 20
 
 # 90 degree limited pulse min and max
 MICROSERVO_9G = (0.000544, 0.0024 * 0.43)
-FS5106S = (0.000620 * 1.05, 0.002600 * 0.55)
+FS5106S = (0.000620, 0.002600 * 0.53)
 
 # thermal sensors paths
 T1 = "/sys/bus/w1/devices/28-3c01d607a218/w1_slave"
@@ -81,9 +84,14 @@ class PowerSelector:
         self._servo.detach()
 
 def main():
+    pi = pigpio.pi()
+    pi.set_mode(PUMP_PIN, pigpio.OUTPUT)
+    pi.write(PUMP_PIN, pigpio.LOW)
+
     logger.info("Start")
     power = PowerSelector(SERVO_PIN)
     try:
+        pi.write(PUMP_PIN, pigpio.HIGH)
         while True:
             for level in range(1, 10):
                 power.set_level(level)
@@ -91,6 +99,8 @@ def main():
                 power.set_level(level)
     finally:
         power.detach()
+        pi.write(PUMP_PIN, pigpio.LOW)
+        pi.stop()
 
 if __name__ == "__main__":
     main()	
