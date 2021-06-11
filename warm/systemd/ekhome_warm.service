@@ -1,0 +1,10 @@
+[Unit]
+Description=Temperature Sensors Logger
+After=network.target
+
+[Service]
+Environment="PYTHONPATH=/home/ekirill/projects/raspberry/warm/"
+ExecStart=/home/ekirill/projects/raspberry/warm/daemons/temp_sensors.py
+
+[Install]
+WantedBy=multi-user.target

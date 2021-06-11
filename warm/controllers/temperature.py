@@ -1,7 +1,7 @@
+import aiofiles
 from typing import Optional
 
-import aiofiles
-from pydantic import BaseModel
+from models.temperature import TempState
 
 # thermal sensors paths
 T1 = "/sys/bus/w1/devices/28-3c01d607a218/w1_slave"
@@ -18,16 +18,6 @@ HEATING_CIRCLE_SENSORS = {
     "temp_in": T3,
     "temp_out": T4,
 }
-
-
-class TempPair(BaseModel):
-    temp_in: int
-    temp_out: int
-
-
-class TempState(BaseModel):
-    incoming: TempPair
-    heating_circle: TempPair
 
 
 async def read_sensor(path) -> Optional[int]:

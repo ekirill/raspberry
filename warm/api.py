@@ -2,7 +2,8 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from controllers.level import get_level
-from controllers.temperature import TempState, get_temp_state
+from controllers.temperature import get_temp_state
+from models.temperature import TempState
 
 app = FastAPI()
 

@@ -5,7 +5,7 @@ from repository import db
 from config.settings import MIGRATIONS_PATH
 
 def migrate():
-    conn = db.get_connection()
+    conn = db.get_connection_sync()
     for dirpath, dnames, fnames in os.walk(MIGRATIONS_PATH):
         for f in fnames:
             if f.endswith(".sql"):
@@ -13,7 +13,7 @@ def migrate():
                 print(f"Executing {f} ...", end="")
                 with open(f) as fh:
                     sql = fh.read()
-                    with conn:
+                    with conn.transaction():
                         with conn.cursor() as cur:
                             cur.execute(sql)
                 print(f"OK")
