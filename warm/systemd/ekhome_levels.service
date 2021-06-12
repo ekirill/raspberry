@@ -1,0 +1,10 @@
+[Unit]
+Description=Power Level Syncronizer
+After=network.target
+
+[Service]
+Environment="PYTHONPATH=/home/ekirill/projects/raspberry/warm/"
+ExecStart=/home/ekirill/projects/raspberry/warm/daemons/level_syncronizer.py
+
+[Install]
+WantedBy=multi-user.target
