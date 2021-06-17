@@ -18,7 +18,7 @@ async def level_sync():
     while True:
         level = await get_level()
 
-        await asyncio.sleep(1.0)
+        await asyncio.sleep(3.0)
 
         db_level = await db_get_level(conn)
         if db_level and db_level != level:
