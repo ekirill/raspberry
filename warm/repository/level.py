@@ -8,6 +8,7 @@ async def get_level(connection) -> Optional[int]:
         if row:
             return row[0]
 
+
 async def save_level(connection, level: int):
     async with connection.cursor() as cur:
         await cur.execute("INSERT INTO warm.level (level) VALUES (%s)", (level,))

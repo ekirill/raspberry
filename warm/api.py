@@ -1,13 +1,14 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
-from controllers.level import MIN_LEVEL, MAX_LEVEL
-from repository.db import get_connection
-from repository.level import save_level, get_level
-from repository.temperature import get_last_temp_state
+
 from models.temperature import TempState
+from services.system import get_state, set_level
 
 app = FastAPI()
+templates = Jinja2Templates(directory="templates")
 
 
 class State(BaseModel):
@@ -18,29 +19,40 @@ class State(BaseModel):
 class Level(BaseModel):
     level: int
 
-@app.get("/", response_model=State)
-async def get_state():
-    conn = await get_connection()
-    async with conn.transaction():
-        temp_state = await get_last_temp_state(conn)
-        level = await get_level(conn)
 
-    return {
-        "temperature": temp_state,
-        "level": level,
-    }
+@app.get("/", response_class=HTMLResponse)
+async def index(request: Request, level: int = None):
+    if level is not None:
+        await set_level(level)
+
+    state = await get_state()
+    levels = [
+        {
+            "level": idx,
+            "on": idx == state.level
+        }
+        for idx in range(1, 10)
+    ]
+
+    return templates.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "state": state,
+            "levels": levels,
+        }
+    )
+
+
+@app.get("/state", response_model=State)
+async def api_get_state():
+    state = await get_state()
+    return state
 
 
 @app.post("/level")
-async def set_level(level: Level):
+async def api_set_level(level: Level):
     new_level = level.level
-    if new_level < MIN_LEVEL:
-        new_level = MIN_LEVEL
-    if new_level > MAX_LEVEL:
-        new_level = MAX_LEVEL
-
-    conn = await get_connection()
-    async with conn.transaction():
-        await save_level(conn, new_level)
+    await set_level(new_level)
 
     return {"status": "OK"}

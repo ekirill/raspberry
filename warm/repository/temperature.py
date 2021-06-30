@@ -20,6 +20,7 @@ async def get_last_temp_state(connection) -> Optional[TempState]:
             }
             return TempState(**result)
 
+
 async def save_temp_state(connection, temp_state: TempState):
     async with connection.cursor() as cur:
         await cur.execute(

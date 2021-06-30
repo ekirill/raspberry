@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Отопление</title>
+</head>
+<style>
+    body, div, td, span, h1, h2, h3, h4, h5 {
+        font-family: sans-serif;
+        color: #FFF;
+    }
+    .pageHeader {
+        font-size: 6em;
+        text-align: center;
+        color: #FFC973;
+    }
+    body {
+        background: #FF9C00;
+    }
+    .tempBlockHeader {
+        font-size: 4em;
+        text-align: center;
+        margin-top: 1em;
+    }
+    .tempBlock {
+        display: flex;
+        align-items: stretch;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+    .tempLabel {
+        flex-basis: 45%;
+        font-size: 3em;
+        padding: 0.5em;
+        background-color: #A66500;
+        flex-grow: 1;
+        margin: 0.2em;
+    }
+    .tempValue {
+        flex-basis: 30%;
+        font-size: 3em;
+        padding: 0.5em;
+        background-color: #BF8830;
+        flex-grow: 1;
+        margin: 0.2em;
+    }
+    .levelBlock {
+        margin-top: 8em;
+        display: flex;
+        align-items: stretch;
+        justify-content: space-between;
+    }
+    .levelLabel {
+        flex-basis: 45%;
+        font-size: 3em;
+        padding: 0.5em;
+        background-color: #bf9553;
+        flex-grow: 1;
+        margin: 0.2em;
+        text-align: center;
+        color: #fce7d2;
+        border-radius: 0.3em;
+    }
+    .levelLabel a {
+        text-decoration: none;
+        color: inherit;
+    }
+    .levOn {
+        color: #fff;
+        background-color: #ea6b3c;
+    }
+</style>
+<body>
+    <div class="pageHeader">Отопление</div>
+
+    <div class="tempBlockHeader">Трасса</div>
+    <div class="tempBlock">
+        <div class="tempLabel">Вход</div>
+        <div class="tempValue">{{ state.temperature.incoming.temp_in }} C</div>
+        <div class="tempLabel">Выход</div>
+        <div class="tempValue">{{ state.temperature.incoming.temp_out }} C</div>
+    </div>
+
+    <div class="tempBlockHeader">Радиаторы</div>
+    <div class="tempBlock">
+        <div class="tempLabel">Вход</div>
+        <div class="tempValue">{{ state.temperature.heating_circle.temp_in }} C</div>
+        <div class="tempLabel">Выход</div>
+        <div class="tempValue">{{ state.temperature.heating_circle.temp_out }} C</div>
+    </div>
+
+    <div class="levelBlock">
+        {% for lev in levels %}
+            {% if lev.on %}
+                <div class="levelLabel levOn">{{ lev.level }}</div>
+            {% else %}
+                <div class="levelLabel"><a href="?level={{ lev.level }}">{{ lev.level }}</a></div>
+            {% endif %}
+
+        {% endfor %}
+    </div>
+
+</body>
+</html>

@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Environment="PYTHONPATH=/home/ekirill/projects/raspberry/warm/"
 WorkingDirectory=/home/ekirill/projects/raspberry/warm/
-ExecStart=/usr/local/bin/uvicorn api:app --host 192.168.1.200
+ExecStart=/usr/local/bin/uvicorn api:app --host 192.168.1.200 --port 80
 
 [Install]
 WantedBy=multi-user.target
