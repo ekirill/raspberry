@@ -5,6 +5,7 @@ import logging
 from controllers import temperature
 from repository.db import get_connection
 from repository.temperature import get_last_temp_state, save_temp_state
+from services.monitoring import get_statsd
 
 logging.basicConfig(
     format='%(asctime)s %(message)s', level=logging.DEBUG
@@ -22,6 +23,9 @@ async def monitor_sensors():
 
     while True:
         temps = await temperature.get_temp_state()
+
+        get_statsd().gauge("warm.temperature.income", temps.incoming.temp_in)
+        get_statsd().gauge("warm.temperature.heaters", temps.heating_circle.temp_in)
 
         need_save = latest_temps is None
         if not need_save:
