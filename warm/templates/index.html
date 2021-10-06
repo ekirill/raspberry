@@ -71,22 +71,13 @@
     }
 </style>
 <body>
-    <div class="pageHeader">Отопление</div>
-
-    <div class="tempBlockHeader">Трасса</div>
     <div class="tempBlock">
-        <div class="tempLabel">Вход</div>
-        <div class="tempValue">{{ state.temperature.incoming.temp_in }} C</div>
-        <div class="tempLabel">Выход</div>
-        <div class="tempValue">{{ state.temperature.incoming.temp_out }} C</div>
-    </div>
-
-    <div class="tempBlockHeader">Радиаторы</div>
-    <div class="tempBlock">
-        <div class="tempLabel">Вход</div>
+        <div class="tempLabel">Улица</div>
+        <div class="tempValue">{{ state.temperature.outdoor }} C</div>
+        <div class="tempLabel">Трасса</div>
+        <div class="tempValue">{{ state.temperature.incoming }} C</div>
+        <div class="tempLabel">Радиаторы</div>
         <div class="tempValue">{{ state.temperature.heating_circle.temp_in }} C</div>
-        <div class="tempLabel">Выход</div>
-        <div class="tempValue">{{ state.temperature.heating_circle.temp_out }} C</div>
     </div>
 
     <div class="levelBlock">

@@ -24,14 +24,15 @@ async def monitor_sensors():
     while True:
         temps = await temperature.get_temp_state()
 
-        get_statsd().gauge("warm.temperature.income", temps.incoming.temp_in)
+        get_statsd().gauge("warm.temperature.income", temps.incoming)
+        get_statsd().gauge("warm.temperature.outdoor", temps.outdoor)
         get_statsd().gauge("warm.temperature.heaters", temps.heating_circle.temp_in)
 
         need_save = latest_temps is None
         if not need_save:
             need_save = (
-                latest_temps.incoming.temp_in != temps.incoming.temp_in or
-                latest_temps.incoming.temp_out != temps.incoming.temp_out or
+                latest_temps.incoming != temps.incoming or
+                latest_temps.outdoor != temps.outdoor or
                 latest_temps.heating_circle.temp_in != temps.heating_circle.temp_in or
                 latest_temps.heating_circle.temp_out != temps.heating_circle.temp_out
             )
