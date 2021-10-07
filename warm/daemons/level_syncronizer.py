@@ -17,16 +17,18 @@ logger = logging.getLogger("level_sync")
 async def level_sync():
     conn = await get_connection()
     while True:
-        level = await get_level()
-
         await asyncio.sleep(3.0)
+        try:
+            level = await get_level()
 
-        db_level = await db_get_level(conn)
-        get_statsd().gauge("warm.level", db_level)
+            db_level = await db_get_level(conn)
+            get_statsd().gauge("warm.level", db_level)
 
-        if db_level and db_level != level:
-            logger.info(f"Level change detected {level} -> {db_level}")
-            await set_level(db_level)
+            if db_level and db_level != level:
+                logger.info(f"Level change detected {level} -> {db_level}")
+                await set_level(db_level)
+        except Exception as e:
+            logger.error(e)
 
 
 if __name__ == "__main__":

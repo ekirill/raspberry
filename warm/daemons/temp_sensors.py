@@ -22,26 +22,29 @@ async def monitor_sensors():
     logger.info(f"Latest DB temps are: {latest_temps.dict() if latest_temps else None}")
 
     while True:
-        temps = await temperature.get_temp_state()
+        try:
+            temps = await temperature.get_temp_state()
 
-        get_statsd().gauge("warm.temperature.income", temps.incoming)
-        get_statsd().gauge("warm.temperature.outdoor", temps.outdoor)
-        get_statsd().gauge("warm.temperature.heaters", temps.heating_circle.temp_in)
+            get_statsd().gauge("warm.temperature.income", temps.incoming)
+            get_statsd().gauge("warm.temperature.outdoor", temps.outdoor)
+            get_statsd().gauge("warm.temperature.heaters", temps.heating_circle.temp_in)
 
-        need_save = latest_temps is None
-        if not need_save:
-            need_save = (
-                latest_temps.incoming != temps.incoming or
-                latest_temps.outdoor != temps.outdoor or
-                latest_temps.heating_circle.temp_in != temps.heating_circle.temp_in or
-                latest_temps.heating_circle.temp_out != temps.heating_circle.temp_out
-            )
+            need_save = latest_temps is None
+            if not need_save:
+                need_save = (
+                    latest_temps.incoming != temps.incoming or
+                    latest_temps.outdoor != temps.outdoor or
+                    latest_temps.heating_circle.temp_in != temps.heating_circle.temp_in or
+                    latest_temps.heating_circle.temp_out != temps.heating_circle.temp_out
+                )
 
-        if need_save:
-            logger.info(f"Temps changed: {temps.dict()}")
-            async with conn.transaction():
-                await save_temp_state(conn, temps)
-            latest_temps = temps
+            if need_save:
+                logger.info(f"Temps changed: {temps.dict()}")
+                async with conn.transaction():
+                    await save_temp_state(conn, temps)
+                latest_temps = temps
+        except Exception as e:
+            logger.error(e)
 
         await asyncio.sleep(60.0)
 
