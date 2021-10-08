@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS warm.desired (
+    dt TIMESTAMP WITH TIME ZONE PRIMARY KEY NOT NULL DEFAULT NOW(),
+    level INT,
+    heaters_temp INT
+);

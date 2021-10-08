@@ -4,7 +4,9 @@ from gpiozero import Servo
 from gpiozero.pins.pigpio import PiGPIOFactory
 
 from repository.db import get_connection
+from repository.desired import get_desired
 from repository.level import get_level as db_get_level
+from repository.temperature import get_last_temp_state
 
 logging.basicConfig(
     format='%(asctime)s %(message)s', level=logging.DEBUG
@@ -43,7 +45,7 @@ class PowerSelector:
         self._servo = servo
 
     @classmethod
-    async def create(cls, pin: int, level: int) -> "PowerSelector":
+    async def create(cls, pin: int, level: float) -> "PowerSelector":
         servo = Servo(
             pin, 0.0,
             cls.pulse[0], cls.pulse[1], 20 / 1000,
@@ -76,7 +78,7 @@ class PowerSelector:
             pos = self._min_pos
         return pos
 
-    async def set_level(self, new_level):
+    async def set_level(self, new_level: float):
         if new_level < self._min_level:
             new_level = self._min_level
 
@@ -92,7 +94,7 @@ class PowerSelector:
 
         await self._update_servo_pos(old_pos)
 
-    def get_level(self) -> int:
+    def get_level(self) -> float:
         return self._level
 
     async def _update_servo_pos(self, old_pos: float):
@@ -131,7 +133,7 @@ async def get_selector() -> PowerSelector:
     if _powerSelector is None:
         conn = await get_connection()
         async with conn.transaction():
-            level = await db_get_level(conn)
+            level = await get_desired_level(conn)
             if level is None:
                 level = 4
 
@@ -140,11 +142,40 @@ async def get_selector() -> PowerSelector:
     return _powerSelector
 
 
-async def get_level() -> int:
+async def get_level() -> float:
     selector = await get_selector()
     return selector.get_level()
 
 
-async def set_level(new_level: int):
+async def set_level(new_level: float):
     selector = await get_selector()
     await selector.set_level(new_level)
+
+
+def evaluate_level(desired_temp: int, incoming_temp: int) -> float:
+    desired_percentage = desired_temp / incoming_temp
+    # formula is evaluated by https://planetcalc.ru/5992/ and some historical stat data
+    level = 162.99 * (desired_percentage**3) - 307.49 * (desired_percentage**2) + 193.44 * desired_percentage - 38.63
+
+    if level < MIN_LEVEL:
+        level = MIN_LEVEL
+    if level > MAX_LEVEL:
+        level = MAX_LEVEL
+
+    return float(level)
+
+
+async def get_desired_level(conn) -> float:
+    desired = await get_desired(conn)
+    if desired:
+        if desired.level:
+            return float(desired.level)
+
+        if desired.heaters_temp:
+            temp_state = await get_last_temp_state(conn)
+            if temp_state:
+                evaluated_level = evaluate_level(desired.heaters_temp, temp_state.incoming)
+                return evaluated_level
+
+    db_level = await db_get_level(conn)
+    return float(db_level)
