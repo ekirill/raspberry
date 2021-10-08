@@ -21,9 +21,11 @@ HEATING_CIRCLE_SENSORS = {
 async def read_sensor(path) -> Optional[int]:
     async with aiofiles.open(path, mode='r') as f:
         async for ln in f:
+            if " t=" not in ln:
+                continue
             ln = ln.strip()
-            if ln[-5:].isdigit():
-                return round(float(ln[-5:]) / 1000.0)
+            t = ln[-5:].replace("t", " ").replace("=", " ").strip()
+            return round(float(t) / 1000.0)
 
 
 async def get_temp_state() -> TempState:
