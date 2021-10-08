@@ -2,6 +2,8 @@
 import asyncio
 import logging
 
+from psycopg3 import OperationalError
+
 from controllers import temperature
 from repository.db import get_connection
 from repository.temperature import get_last_temp_state, save_temp_state
@@ -43,6 +45,10 @@ async def monitor_sensors():
                 async with conn.transaction():
                     await save_temp_state(conn, temps)
                 latest_temps = temps
+        except OperationalError as e:
+            logger.error(f"DB ERROR, reconnecting: {e}")
+            await conn.close()
+            conn = await get_connection()
         except Exception as e:
             logger.error(e)
 
