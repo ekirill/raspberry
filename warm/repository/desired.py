@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 class Desired(BaseModel):
     heaters_temp: Optional[int]
-    level: Optional[int]
+    level: Optional[float]
 
 
 async def get_desired(connection) -> Optional[Desired]:

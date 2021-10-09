@@ -4,7 +4,7 @@ from gpiozero import Servo
 from gpiozero.pins.pigpio import PiGPIOFactory
 
 from repository.db import get_connection
-from repository.desired import get_desired
+from repository.desired import get_desired, Desired
 from repository.level import get_level as db_get_level
 from repository.temperature import get_last_temp_state
 
@@ -133,9 +133,10 @@ async def get_selector() -> PowerSelector:
     if _powerSelector is None:
         conn = await get_connection()
         async with conn.transaction():
-            level = await get_desired_level(conn)
-            if level is None:
-                level = 4
+            desired = await get_desired_level(conn)
+            level = 4
+            if desired and desired.level:
+                level = desired.level
 
             _powerSelector = await PowerSelector.create(SERVO_PIN, level)
 
@@ -165,17 +166,26 @@ def evaluate_level(desired_temp: int, incoming_temp: int) -> float:
     return float(level)
 
 
-async def get_desired_level(conn) -> float:
+async def get_desired_level(conn) -> Desired:
     desired = await get_desired(conn)
     if desired:
         if desired.level:
-            return float(desired.level)
+            return Desired(
+                level=float(desired.level),
+                heaters_temp=None,
+            )
 
         if desired.heaters_temp:
             temp_state = await get_last_temp_state(conn)
             if temp_state:
                 evaluated_level = evaluate_level(desired.heaters_temp, temp_state.incoming)
-                return evaluated_level
+                return Desired(
+                    level=evaluated_level,
+                    heaters_temp=desired.heaters_temp,
+                )
 
     db_level = await db_get_level(conn)
-    return float(db_level)
+    return Desired(
+        level=float(db_level),
+        heaters_temp=None,
+    )

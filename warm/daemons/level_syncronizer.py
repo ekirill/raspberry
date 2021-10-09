@@ -7,6 +7,7 @@ from psycopg3 import OperationalError
 
 from controllers.level import get_level, set_level, get_desired_level
 from repository.db import get_connection
+from repository.temperature import get_last_temp_state
 from services.monitoring import get_statsd
 
 logging.basicConfig(
@@ -17,6 +18,7 @@ logger = logging.getLogger("level_sync")
 
 
 MIN_TIME_TO_CHANGE = 20 * 60
+LEVEL_SWITCH_THRESHOLD = 5
 
 
 async def level_sync():
@@ -33,13 +35,23 @@ async def level_sync():
             if last_change_time and time() - last_change_time < MIN_TIME_TO_CHANGE:
                 continue
 
-            desired_level = await get_desired_level(conn)
-            # desired_level = await db_get_level(conn)
+            desired = await get_desired_level(conn)
 
-            if desired_level and desired_level != level:
-                logger.info(f"Level change detected {level} -> {desired_level}")
-                await set_level(desired_level)
-                last_change_time = time()
+            if desired:
+                new_level = None
+
+                if desired.heaters_temp:
+                    current_temp = await get_last_temp_state(conn)
+                    if abs(desired.heaters_temp - current_temp.heating_circle.temp_in) > LEVEL_SWITCH_THRESHOLD:
+                        new_level = desired.level
+                else:
+                    new_level = desired.level
+
+                if new_level:
+                    logger.info(f"Level change detected {level} -> {new_level}")
+                    await set_level(new_level)
+                    last_change_time = time()
+
         except OperationalError as e:
             logger.error(f"DB ERROR, reconnecting: {e}")
             await conn.close()
