@@ -78,14 +78,14 @@ class PowerSelector:
             pos = self._min_pos
         return pos
 
-    async def set_level(self, new_level: float):
+    async def set_level(self, new_level: float, force: bool = False):
         if new_level < self._min_level:
             new_level = self._min_level
 
         if new_level > self._max_level:
             new_level = self._max_level
 
-        if self._level == new_level:
+        if not force and self._level == new_level:
             return
 
         logger.info(f"Setting power level from {self._level} to {new_level}")
@@ -93,6 +93,9 @@ class PowerSelector:
         self._level = new_level
 
         await self._update_servo_pos(old_pos)
+
+    async def resync(self, level: float):
+        return await self.set_level(level, force=True)
 
     def get_level(self) -> float:
         return self._level
@@ -151,6 +154,11 @@ async def get_level() -> float:
 async def set_level(new_level: float):
     selector = await get_selector()
     await selector.set_level(new_level)
+
+
+async def resync_level(level: float):
+    selector = await get_selector()
+    await selector.resync(level)
 
 
 def evaluate_level(desired_temp: int, incoming_temp: int) -> float:

@@ -5,7 +5,7 @@ from time import time
 
 from psycopg3 import OperationalError
 
-from controllers.level import get_level, set_level, get_desired_level
+from controllers.level import get_level, set_level, get_desired_level, resync_level
 from repository.db import get_connection
 from repository.temperature import get_last_temp_state
 from services.monitoring import get_statsd
@@ -19,11 +19,13 @@ logger = logging.getLogger("level_sync")
 
 MIN_TIME_TO_CHANGE = 20 * 60
 LEVEL_SWITCH_THRESHOLD = 5
+RESYNC_TTL = 30
 
 
 async def level_sync():
     conn = await get_connection()
     last_change_time = None
+    last_resync_time = time()
 
     while True:
         await asyncio.sleep(5.0)
@@ -32,25 +34,27 @@ async def level_sync():
             level = await get_level()
             get_statsd().gauge("warm.level", level)
 
-            if last_change_time and time() - last_change_time < MIN_TIME_TO_CHANGE:
-                continue
+            new_level = None
+            if last_change_time and time() - last_change_time > MIN_TIME_TO_CHANGE:
+                desired = await get_desired_level(conn)
 
-            desired = await get_desired_level(conn)
+                if desired:
+                    if desired.heaters_temp:
+                        current_temp = await get_last_temp_state(conn)
+                        if abs(desired.heaters_temp - current_temp.heating_circle.temp_in) > LEVEL_SWITCH_THRESHOLD:
+                            new_level = desired.level
+                    else:
+                        if desired.level != level:
+                            new_level = desired.level
 
-            if desired:
-                new_level = None
-
-                if desired.heaters_temp:
-                    current_temp = await get_last_temp_state(conn)
-                    if abs(desired.heaters_temp - current_temp.heating_circle.temp_in) > LEVEL_SWITCH_THRESHOLD:
-                        new_level = desired.level
-                else:
-                    new_level = desired.level
-
-                if new_level:
-                    logger.info(f"Level change detected {level} -> {new_level}")
-                    await set_level(new_level)
-                    last_change_time = time()
+            if new_level:
+                logger.info(f"Level change detected {level} -> {new_level}")
+                await set_level(new_level)
+                last_change_time = time()
+            elif time() - last_resync_time > RESYNC_TTL:
+                logger.info(f"Level resync {level}")
+                await resync_level(level)
+                last_resync_time = time()
 
         except OperationalError as e:
             logger.error(f"DB ERROR, reconnecting: {e}")
