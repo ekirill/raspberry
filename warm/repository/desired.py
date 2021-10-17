@@ -17,3 +17,7 @@ async def get_desired(connection) -> Optional[Desired]:
                 level=row[0],
                 heaters_temp=row[1],
             )
+
+async def save_level(connection, level: int):
+    async with connection.cursor() as cur:
+        await cur.execute("INSERT INTO warm.desired (level) VALUES (%s)", (level,))

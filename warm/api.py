@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel
 
 
@@ -24,6 +24,7 @@ class Level(BaseModel):
 async def index(request: Request, level: int = None):
     if level is not None:
         await set_level(level)
+        return RedirectResponse("/")
 
     state = await get_state()
     levels = [

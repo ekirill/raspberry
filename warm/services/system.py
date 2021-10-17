@@ -1,9 +1,10 @@
 from pydantic import BaseModel
 
-from controllers.level import MIN_LEVEL, MAX_LEVEL
+from controllers.level import MIN_LEVEL, MAX_LEVEL, get_desired_level
 from models.temperature import TempState
 from repository.db import get_connection
-from repository.level import get_level, save_level
+from controllers.level import get_level
+from repository.desired import save_level
 from repository.temperature import get_last_temp_state
 
 
@@ -16,7 +17,8 @@ async def get_state() -> State:
     conn = await get_connection()
     async with conn.transaction():
         temp_state = await get_last_temp_state(conn)
-        level = await get_level(conn)
+        desired = await get_desired_level(conn)
+        level = desired.level
 
     return State(
         temperature=temp_state,
@@ -32,6 +34,4 @@ async def set_level(new_level: int):
 
     conn = await get_connection()
     async with conn.transaction():
-        current = await get_level(conn)
-        if current != new_level:
-            await save_level(conn, new_level)
+        await save_level(conn, new_level)

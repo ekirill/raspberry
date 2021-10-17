@@ -35,17 +35,17 @@ async def level_sync():
             get_statsd().gauge("warm.level", level)
 
             new_level = None
-            if last_change_time and time() - last_change_time > MIN_TIME_TO_CHANGE:
-                desired = await get_desired_level(conn)
 
-                if desired:
-                    if desired.heaters_temp:
-                        current_temp = await get_last_temp_state(conn)
-                        if abs(desired.heaters_temp - current_temp.heating_circle.temp_in) > LEVEL_SWITCH_THRESHOLD:
-                            new_level = desired.level
-                    else:
-                        if desired.level != level:
-                            new_level = desired.level
+            desired = await get_desired_level(conn)
+
+            if desired:
+                if desired.heaters_temp:
+                    current_temp = await get_last_temp_state(conn)
+                    if abs(desired.heaters_temp - current_temp.heating_circle.temp_in) > LEVEL_SWITCH_THRESHOLD:
+                        new_level = desired.level
+                else:
+                    if desired.level != level:
+                        new_level = desired.level
 
             if new_level:
                 logger.info(f"Level change detected {level} -> {new_level}")

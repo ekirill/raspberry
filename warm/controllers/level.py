@@ -38,11 +38,12 @@ class PowerSelector:
 
     _level = (_max_level - _min_level + 1) // 2
 
-    _pos_change_delta = 0.01
-    _pos_change_time = 0.1
+    _pos_change_delta = 0.05
+    _pos_change_time = 0.2
 
     def __init__(self, servo: Servo):
         self._servo = servo
+        self._current_pos = 0.0
 
     @classmethod
     async def create(cls, pin: int, level: float) -> "PowerSelector":
@@ -56,6 +57,7 @@ class PowerSelector:
 
         # dirty hack to give more time if servo was too far from level at init
         instance._servo.value = instance._pos
+        instance._current_pos = instance._pos
         await asyncio.sleep(5.0)
         instance.detach()
 
@@ -85,14 +87,16 @@ class PowerSelector:
         if new_level > self._max_level:
             new_level = self._max_level
 
-        if not force and self._level == new_level:
-            return
+        if self._level == new_level:
+            if not force:
+                return
+            logger.info(f"Resyncing power level {new_level}")    
+        else:
+            logger.info(f"Setting power level from {self._level} to {new_level}")
 
-        logger.info(f"Setting power level from {self._level} to {new_level}")
-        old_pos = self._pos
         self._level = new_level
 
-        await self._update_servo_pos(old_pos)
+        await self._update_servo_pos()
 
     async def resync(self, level: float):
         return await self.set_level(level, force=True)
@@ -100,27 +104,34 @@ class PowerSelector:
     def get_level(self) -> float:
         return self._level
 
-    async def _update_servo_pos(self, old_pos: float):
+    async def _update_servo_pos(self):
         new_pos = self._pos
+        old_pos = self._current_pos
         logger.debug(f"Moving Servo pos from {old_pos} to {new_pos}")
 
         step = self._pos_change_delta
-        if new_pos < old_pos:
-            step = -step
+        if abs(new_pos - old_pos) > step:
+            logger.debug("Slow mode ON")
+            if new_pos < old_pos:
+                step = -step
 
-        while abs(new_pos - old_pos) > abs(step):
-            old_pos += step
+            while abs(new_pos - old_pos) > abs(step):
+                old_pos = round(old_pos + step, 2)
 
-            if old_pos > self._max_pos:
-                old_pos = self._max_pos
-            if old_pos < self._min_pos:
-                old_pos = self._min_pos
+                if old_pos > self._max_pos:
+                    old_pos = self._max_pos
+                    break
+                if old_pos < self._min_pos:
+                    old_pos = self._min_pos
+                    break
 
-            self._servo.value = old_pos
-            await asyncio.sleep(self._pos_change_time)
+                self._servo.value = old_pos
+                logger.debug(f"Slow mode pos {old_pos}")
+                await asyncio.sleep(self._pos_change_time)
 
         self._servo.value = new_pos
-        await asyncio.sleep(3.0)
+        self._current_pos = new_pos
+        await asyncio.sleep(5.0)
         self.detach()
 
     def detach(self):
