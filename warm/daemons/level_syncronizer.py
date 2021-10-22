@@ -19,13 +19,11 @@ logger = logging.getLogger("level_sync")
 
 MIN_TIME_TO_CHANGE = 20 * 60
 LEVEL_SWITCH_THRESHOLD = 5
-RESYNC_TTL = 30
 
 
 async def level_sync():
     conn = await get_connection()
     last_change_time = None
-    last_resync_time = time()
 
     while True:
         await asyncio.sleep(5.0)
@@ -51,10 +49,6 @@ async def level_sync():
                 logger.info(f"Level change detected {level} -> {new_level}")
                 await set_level(new_level)
                 last_change_time = time()
-            elif time() - last_resync_time > RESYNC_TTL:
-                logger.info(f"Level resync {level}")
-                await resync_level(level)
-                last_resync_time = time()
 
         except OperationalError as e:
             logger.error(f"DB ERROR, reconnecting: {e}")
