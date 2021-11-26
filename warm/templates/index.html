@@ -75,9 +75,9 @@
         <div class="tempLabel">Улица</div>
         <div class="tempValue">{{ state.temperature.outdoor }} C</div>
         <div class="tempLabel">Трасса</div>
-        <div class="tempValue">{{ state.temperature.incoming }} C</div>
+	<div class="tempValue"><span style="color: #f99">{{ state.temperature.incoming }} C</span></div>
         <div class="tempLabel">Радиаторы</div>
-        <div class="tempValue">{{ state.temperature.heating_circle.temp_in }} C</div>
+	<div class="tempValue"><span style="color: #f99">{{ state.temperature.heating_circle.temp_in }} C</span>&nbsp;/&nbsp;<span style="color: #44d">{{ state.temperature.heating_circle.temp_out }} C</span></div>
     </div>
 
     <div class="levelBlock">
