@@ -24,7 +24,7 @@ async def read_sensor(path) -> Optional[int]:
             if " t=" not in ln:
                 continue
             ln = ln.strip()
-            t = ln[-5:].replace("t", " ").replace("=", " ").strip()
+            t = ln[-7:].replace("t", " ").replace("=", " ").strip()
             return round(float(t) / 1000.0)
 
 
