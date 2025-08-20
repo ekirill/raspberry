@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 import asyncio
 import logging
-from time import time
 
 from psycopg3 import OperationalError
 
-from controllers.level import get_level, set_level, get_desired_level, resync_level
+from controllers.level import get_level, set_level, get_desired_level
 from repository.db import get_connection
 from repository.temperature import get_last_temp_state
 from services.monitoring import get_statsd
@@ -23,7 +22,6 @@ LEVEL_SWITCH_THRESHOLD = 5
 
 async def level_sync():
     conn = await get_connection()
-    last_change_time = None
 
     while True:
         await asyncio.sleep(5.0)
@@ -48,7 +46,6 @@ async def level_sync():
             if new_level:
                 logger.info(f"Level change detected {level} -> {new_level}")
                 await set_level(new_level)
-                last_change_time = time()
 
         except OperationalError as e:
             logger.error(f"DB ERROR, reconnecting: {e}")

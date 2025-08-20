@@ -55,11 +55,8 @@ class PowerSelector:
         instance = cls(servo)
         instance._level = level
 
-        # dirty hack to give more time if servo was too far from level at init
         instance._servo.value = instance._pos
         instance._current_pos = instance._pos
-        await asyncio.sleep(5.0)
-        instance.detach()
 
         return instance
 
@@ -118,11 +115,7 @@ class PowerSelector:
             while abs(new_pos - old_pos) > abs(step):
                 old_pos = round(old_pos + step, 2)
 
-                if old_pos > self._max_pos:
-                    old_pos = self._max_pos
-                    break
-                if old_pos < self._min_pos:
-                    old_pos = self._min_pos
+                if old_pos > self._max_pos or old_pos < self._min_pos:
                     break
 
                 self._servo.value = old_pos
@@ -131,11 +124,6 @@ class PowerSelector:
 
         self._servo.value = new_pos
         self._current_pos = new_pos
-        await asyncio.sleep(5.0)
-        self.detach()
-
-    def detach(self):
-        self._servo.detach()
 
 
 _powerSelector = None
