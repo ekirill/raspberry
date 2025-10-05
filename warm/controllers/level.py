@@ -38,7 +38,7 @@ class PowerSelector:
 
     _level = (_max_level - _min_level + 1) // 2
 
-    _pos_change_delta = 0.05
+    _pos_change_delta = 0.02
     _pos_change_time = 0.2
 
     def __init__(self, servo: Servo):

@@ -10,3 +10,4 @@ class TempState(BaseModel):
     outdoor: int
     incoming: int
     heating_circle: TempPair
+
